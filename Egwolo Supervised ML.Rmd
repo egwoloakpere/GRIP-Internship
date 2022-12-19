@@ -1,0 +1,131 @@
+---
+title: "Predicting the percentage of a student based on the number of study hours using Supervised ML with R Programming Language"
+author: "Egwolo Akpere"
+date: "2022-12-19"
+output: html_document
+---
+#The work reported in this study explores and discuss extensively on a public dataset gotten from The Spark Foundation. The study was preceded by an elaborate and up-to-date analysis using the R programming language. This is a simple linear regression task as it involves just 2 variables. Data can be found at http://bit.ly/w-data
+
+# Business Question: what will be the predicted score if a student studies for 9.25 hrs/ day?
+
+# Solution
+# Install and load our package.
+```{r}
+library(tidyverse)
+```
+
+```{r}
+library(readr)
+```
+# Import our dataset
+
+```{r}
+data <- read.csv("C:/Users/HP PC/Downloads/Students Data.csv")
+```
+# Inspect our dataset.
+```{r}
+View(data)
+head(data)
+```
+
+# Apply linear regression by creating a model
+
+```{r}
+model<- lm(Scores~Hours,data = data)
+model
+```
+# Plot our data. 
+#we do this by installing and loading our ggplot2 package
+```{r}
+library(ggplot2)
+```
+# Plotting the distribution of scores
+```{r}
+ggplot(data= data,aes(x=Hours,y=Scores))+geom_point() + ggtitle('Distribution of Scores')+
+geom_point(color='red')
+```
+
+#From the graph above, we can clearly see that there is a positive linear relation between the number of hours studied and percentage of score.
+
+# Fit a regression line into our plot
+```{r}
+ggplot(data= data,aes(x=Hours,y=Scores))+geom_point() + ggtitle('Distribution of Scores')+
+  geom_point(color='red')+ geom_smooth(method = "lm", se = FALSE)
+```
+
+# Predict the scores of our Data Frame using our model
+```{r}
+predicted_scores <-predict(model, data = data$Scores)
+predicted_scores
+```
+# Add predicted scores to our Dataframe.
+```{r}
+data$prediction <- predicted_scores
+View(data)
+head(data)
+```
+# Check the accuracy of our model
+```{r}
+cor.test(data$Scores,predicted_scores)
+```
+#both data have an extimated corrolation of 0.976. now lets visualize this.
+```{r}
+ggplot(data= data,aes(x=predicted_scores, y=Scores))+geom_point() + ggtitle('Distribution of Scores')+
+  geom_point(color='darkblue')
+```
+
+# Split the data into training and test set
+```{r message=FALSE, warning=FALSE}
+library(caret)
+set.seed(123)
+training.samples <- data$Scores %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data  <- data[training.samples, ]
+test.data <- data[-training.samples, ]
+```
+# Build the model
+```{r}
+model_train <- lm(Scores ~., data = train.data)
+```
+# Summarize the model
+```{r}
+summary(model_train)
+```
+#In our example, it can be seen that p-value of the F-statistic is < 1.983e-14, which is highly significant. This means that, at least, one of the predictor variables is significantly related to the outcome variable.
+# Make predictions
+```{r}
+predictions <- model_train %>% predict(test.data)
+```
+# Model performance
+# (a) Prediction error, RMSE
+```{r}
+RMSE(predictions, test.data$Scores)
+```
+#Root mean square error is 3.8695
+# (b) R-square
+```{r}
+R2(predictions, test.data$Scores)
+```
+#R-square value is 0.9931 which is very good.
+
+#lastly, we answer our stakeholderas question, i.e.predicting the score if a student studies for 9.25 hrs/ day?
+
+```{r}
+X <-data.frame(Hours=9.25)
+result<-predict(model,X)
+print(result)
+```
+#if a student studies for 9.25hours, he/she is likely to score 92.91 
+
+#Next we evaluate the model by calculating the Mean Absolute Error between our predicted scores and observed scores. we do this by first installing and loading the Metrics package.
+```{r}
+library(Metrics)
+```
+# Calculate the Mean Absolute Error
+```{r}
+mae(data$Scores, predicted_scores)
+```
+#MAE for this model is 4.973
+
+
+
